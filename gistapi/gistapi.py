@@ -9,9 +9,11 @@ endpoint to verify the server is up and responding and a search endpoint
 providing a search across all public Gists for a given Github account.
 """
 
-import requests
+import requests, requests_cache, re
 from flask import Flask, jsonify, request
 
+# Add a requests_cache object
+requests_cache.install_cache('demo_cache')
 
 # *The* app object
 app = Flask(__name__)
@@ -59,25 +61,52 @@ def search():
         indicating any failure conditions.
     """
     post_data = request.get_json()
+
     # BONUS: Validate the arguments?
+    if (post_data['username'] is null):
+        result = {}
+        result['status'] = 'failure: no username'
+        result['matches'] = []
+        return jsonify(result)
+
+    if (exists(post_data['pattern']) is null):
+        result = {}
+        result['status'] = 'failure: no pattern'
+        result['matches'] = []
+        return jsonify(result)
 
     username = post_data['username']
     pattern = post_data['pattern']
 
     result = {}
     gists = gists_for_user(username)
+
     # BONUS: Handle invalid users?
+    if (exists(gists) is null):
+        result = {}
+        result['status'] = 'failure: invalid user'
+        result['matches'] = []
+        return jsonify(result)
+
+    matches_overall = []
 
     for gist in gists:
         # REQUIRED: Fetch each gist and check for the pattern
+        for files in gists['files']:
+            file_content = requests.get(files['raw_url'])
+            matches = re.findall(pattern, file_content, re.MULTILINE)
+            if matches:
+                matches_overall.append(matches)
+
         # BONUS: What about huge gists?
         # BONUS: Can we cache results in a datastore/db?
-        pass
+        # DONE with requests-cache
+
 
     result['status'] = 'success'
     result['username'] = username
     result['pattern'] = pattern
-    result['matches'] = []
+    result['matches'] = matches_overall
 
     return jsonify(result)
 
