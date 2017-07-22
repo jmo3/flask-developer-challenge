@@ -8,6 +8,7 @@ module implements a Flask server exposing two endpoints: a simple ping
 endpoint to verify the server is up and responding and a search endpoint
 providing a search across all public Gists for a given Github account.
 """
+from __future__ import print_function
 
 import requests, requests_cache, re
 from flask import Flask, jsonify, request
@@ -47,6 +48,11 @@ def gists_for_user(username):
 
     return response.json()
 
+import sys
+
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+
 
 @app.route("/api/v1/search", methods=['POST'])
 def search():
@@ -61,19 +67,20 @@ def search():
         indicating any failure conditions.
     """
     post_data = request.get_json()
+    eprint (post_data)
 
     # BONUS: Validate the arguments?
-    if (post_data['username'] is null):
-        result = {}
-        result['status'] = 'failure: no username'
-        result['matches'] = []
-        return jsonify(result)
-
-    if (exists(post_data['pattern']) is null):
-        result = {}
-        result['status'] = 'failure: no pattern'
-        result['matches'] = []
-        return jsonify(result)
+    # if (post_data['username'] is None):
+    #     result = {}
+    #     result['status'] = 'failure: no username'
+    #     result['matches'] = []
+    #     return jsonify(result)
+    #
+    # if (post_data['pattern'] is None):
+    #     result = {}
+    #     result['status'] = 'failure: no pattern'
+    #     result['matches'] = []
+    #     return jsonify(result)
 
     username = post_data['username']
     pattern = post_data['pattern']
@@ -82,7 +89,7 @@ def search():
     gists = gists_for_user(username)
 
     # BONUS: Handle invalid users?
-    if (exists(gists) is null):
+    if (gists is None):
         result = {}
         result['status'] = 'failure: invalid user'
         result['matches'] = []
@@ -92,8 +99,8 @@ def search():
 
     for gist in gists:
         # REQUIRED: Fetch each gist and check for the pattern
-        for files in gists['files']:
-            file_content = requests.get(files['raw_url'])
+        for file in gist[u'files']:
+            file_content = requests.get(gists[file[u'raw_url']).json()
             matches = re.findall(pattern, file_content, re.MULTILINE)
             if matches:
                 matches_overall.append(matches)
